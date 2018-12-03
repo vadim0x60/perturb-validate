@@ -1,0 +1,5 @@
+# LaTeX garbage
+*.out
+*.aux
+*.bbl
+*.blg

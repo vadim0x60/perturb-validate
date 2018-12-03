@@ -1,0 +1,87 @@
+%
+% File naacl2019.tex
+%
+%% Based on the style files for ACL 2018 and NAACL 2018, which were
+%% Based on the style files for ACL-2015, with some improvements
+%%  taken from the NAACL-2016 style
+%% Based on the style files for ACL-2014, which were, in turn,
+%% based on ACL-2013, ACL-2012, ACL-2011, ACL-2010, ACL-IJCNLP-2009,
+%% EACL-2009, IJCNLP-2008...
+%% Based on the style files for EACL 2006 by 
+%%e.agirre@ehu.es or Sergi.Balari@uab.es
+%% and that of ACL 08 by Joakim Nivre and Noah Smith
+
+\documentclass[11pt,a4paper]{article}
+\usepackage[hyperref]{naaclhlt2019}
+\usepackage{times}
+\usepackage{latexsym}
+
+\usepackage{url}
+
+%\aclfinalcopy % Uncomment this line for the final submission
+%\def\aclpaperid{***} %  Enter the acl Paper ID here
+
+%\setlength\titlebox{5cm}
+% You can expand the titlebox if you need extra space
+% to show all the authors. Please do not make the titlebox
+% smaller than 5cm (the original size); we will check this
+% in the camera-ready version and ask you to change it back.
+
+\newcommand\BibTeX{B{\sc ib}\TeX}
+
+\title{Perturbation learning for general-purpose text validation}
+
+\author{Vadim Liventsev \\
+  Center for Data-Intensive Science and Engineering \\
+  Skolkovo Institute of Science and Technology\\
+  3 Nobelya st., Moscow 121205 \\
+  {\tt Vadim.Liventsev@skoltech.ru} \\\And
+  Mariya Shejanova \\
+  School of Linguistics \\
+  Higher School of Economics \\
+  21/4 Staraya Basmannaya Ulitsa, Moscow 105066 \\
+  {\tt mvsheyanova@edu.hse.ru}\\\And
+  Francis Tyers \\
+  Associate Professor \\
+  University of Indiana \\
+  Ballantine Hall 832, 1020 East Kirkwood Av., Bloomington, IN 47405 \\
+  {\tt ftyers@prompsit.com} \\}
+
+\date{}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+  Language learners and generative models alike are often in need of text validation: checking how natural a certain sentence sounds within a given language or style.
+  In this paper, we propose an approach to training a statistical validation model on a text corpus with no supervision.
+  This is achieved by applying random perturbations to sentences from the corpus and training a recurrent neural network to discriminate between the original sentences and the perturbed ones.
+  Choosing the right perturbation model, however, is far from trivial: the resulting validation model has to generalize beyond the specific perturbation we introduced and be able to recognize previously unseen kinds of deviations from the norm it learned from the corpus.
+  We develop several perturbation models, demonstrate and compare their generalization ability.
+\end{abstract}
+
+\section{Background}
+\label{sec:background}
+
+\section{Related work}
+\label{sec:related-work}
+
+\section{Methodology}
+\label{sec:methodology}
+
+\subsection{Word-level perturbations}
+
+\subsection{Character-level perturbations}
+
+\subsection{Word-form perturbations}
+
+\subsection{Markov chain perturbations}
+
+\subsection{Adversarial perturbations}
+
+\section{Experimental setup}
+\label{sec:setup}
+
+\section{Results}
+\label{sec:results}
+
+\end{document}

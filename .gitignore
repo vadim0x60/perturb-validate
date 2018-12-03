@@ -82,6 +82,7 @@ target/
 *.swp
 *.swo
 
+# Datasets that can be re-generated with src/data scripts
 data/external
 data/interim
 data/processed
