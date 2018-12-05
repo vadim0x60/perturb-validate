@@ -45,7 +45,7 @@ def main(project_dir):
             with urllib.request.urlopen(bpemb_bin_url) as u:
                 buffer = BytesIO(u.read())
                 tar = tarfile.open(fileobj=buffer, mode='r')
-                bin = tar.extractfile(os.path.join('data', 'ru', bpemb_bin_name))
+                bin = tar.extractfile(f'data/ru/{bpemb_bin_name}')
                 shutil.copyfileobj(bin, f)
     except FileExistsError:
         logger.info(f'{bpemb_bin_name} is already here. Noice! Delete the file and re-run the script to redownload')
