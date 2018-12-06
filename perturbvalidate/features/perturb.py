@@ -1,6 +1,8 @@
 import numpy as np
 
 def slightly_perturb(sentence):
+    """Move one token in the sentence to an arbitrary location"""
+
     remove_from = np.random.randint(len(sentence))
     insert_to = np.random.randint(len(sentence))
     
@@ -10,6 +12,7 @@ def slightly_perturb(sentence):
     return sentence
 
 def perturb(sentence):
+    """Shuffle the entire sentence"""
     return np.random.permutation(sentence)
 
 perturbation_names = ['slight', 'shuffle']
