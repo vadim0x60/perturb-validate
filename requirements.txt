@@ -12,3 +12,8 @@ python-dotenv>=0.5.1
 nltk
 sentencepiece
 gensim
+#pytorch
+torchvision
+numpy
+scipy
+scikit-learn
