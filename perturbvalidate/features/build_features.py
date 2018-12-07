@@ -2,7 +2,11 @@ from pathlib import Path
 import os
 import pickle
 from perturbvalidate.features.embed import tokenize, embed_sentences
-from perturbvalidate.features.perturb import perturbation_names, perturbations
+
+from perturbvalidate.features import perturb
+from perturbvalidate.features import morpho_perturb
+perturbations = perturb.perturbations + morpho_perturb.perturbations
+perturbation_names = perturb.perturbation_names + morpho_perturb.perturbation_names
 
 project_dir = Path(__file__).resolve().parents[2]
 alg_location = os.path.join(project_dir, 'data', 'raw', 'alg.txt')
