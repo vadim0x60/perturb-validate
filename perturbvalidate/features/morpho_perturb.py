@@ -1,4 +1,4 @@
-from numpy.random import choice
+from numpy.random import choice, random
 from pymorphy2 import MorphAnalyzer
 analyzer = MorphAnalyzer()
 cases = ['ablt', 'accs', 'datv', 'gent', 'loct', 'nomn']
@@ -25,6 +25,30 @@ def randomly_lemmatize(tokens, prob=0.5):
 			processed.append(token)
 	return processed
 
+def inflect_token(token):
+	"""Inflect one word randomly"""
+
+	ana = analyzer.parse(token)[0]
+
+	if ana.tag.POS in ['ADJF', 'NOUN', 'NPRO']:
+		tags = cases
+		cur_tag = ana.tag.case
+	elif ana.tag.POS in ['VERB', 'INFN']:
+		tags = persons
+		cur_tag = ana.tag.person
+	else:
+		return token
+
+	to_chose = [tag for tag in tags if tag != cur_tag]
+	to_inflect = choice(to_chose)
+	
+	inflected = ana.inflect({to_inflect})
+	if inflected:
+		# PyMorphy не умеет ставить "себе" в именительный падеж
+		# Впрочем, кажется, я тоже
+		return inflected.word
+	else:
+		return token
 
 def randomly_inflect(tokens, prob=0.5):
 	"""
@@ -36,26 +60,7 @@ def randomly_inflect(tokens, prob=0.5):
 	>>> randomly_inflect('пушистые котики мурлыкают'.split(), prob=1)
 	['пушистых', 'котиками', 'мурлыкаем']
 	"""
-	processed = []
-	for token in tokens:
-		coin = choice([0, 1], p=[1 - prob, prob])
-		if coin:
-			ana = analyzer.parse(token)[0]
-			if ana.tag.POS in ['ADJF', 'NOUN', 'NPRO']:
-				tags = cases
-				cur_tag = ana.tag.case
-			elif ana.tag.POS in ['VERB', 'INFN']:
-				tags = persons
-				cur_tag = ana.tag.person
-			else:
-				processed.append(token)
-				continue
-			to_chose = [tag for tag in tags if tag != cur_tag]
-			to_inflect = choice(to_chose)
-			processed.append(ana.inflect({to_inflect}).word)
-		else:
-			processed.append(token)
-	return processed
+	return [inflect_token(token) if random() < prob else token for token in tokens]
 
 
 perturbation_names = ['half_lemmatized', 'half_inflected']
