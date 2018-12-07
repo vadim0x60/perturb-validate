@@ -20,8 +20,10 @@ def multi_layer_perceptron(input_size, output_size, hidden_layers, activation=nn
 class OrthodoxNet(nn.Module):
     def __init__(self, word_emb_size, hidden_size, out_layers):
         super().__init__()
-        self.lstm = nn.LSTM(word_emb_size, hidden_size)
+        self.lstm = nn.LSTM(word_emb_size, hidden_size, batch_first=True)
         self.classifier = multi_layer_perceptron(2 * hidden_size, 1, out_layers)
+        self.hidden_size = hidden_size
+        self.use_cuda = False
 
     def cuda(self):
         gpu_version = super().cuda()
@@ -29,15 +31,18 @@ class OrthodoxNet(nn.Module):
         return gpu_version
 
     def forward(self, sentences):
-        c0 = normal_dist.sample((1, len(sentences), 32))
-        h0 = normal_dist.sample((1, len(sentences), 32))
-        
+        # Randomly initialize LSTM
+        c0 = normal_dist.sample((1, sentences.shape[0], self.hidden_size))
+        h0 = normal_dist.sample((1, sentences.shape[0], self.hidden_size))
 
         if self.use_cuda:
             c0, h0, sentences = c0.cuda(), h0.cuda(), sentences.cuda()
 
-        _, (cn, hn) = self.lstm(torch.Tensor(sentences), (c0, h0))
+        _, (cn, hn) = self.lstm(sentences, (c0, h0))
         return self.classifier(torch.cat((cn[0], hn[0]), dim=1))[:,0]
 
+def validate_sentence(model, sentence):
+    return bool(model(torch.Tensor([sentence])).cpu().round())
+
 def validate_sentences(model, sentences):
-    return model(torch.Tensor(sentences)).cpu().data.numpy().round().astype(int)
+    return [validate_sentence(model, sentence) for sentence in sentences]
