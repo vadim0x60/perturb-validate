@@ -19,16 +19,20 @@ if __name__ == '__main__':
     import click
     import pickle
     from pathlib import Path
-    from perturbvalidate.features.embed import embed_sentences
-    from perturbvalidate.models.perdict_model import validate_sentence
+    from perturbvalidate.features.embed import embed_sentences, tokenize
+    from perturbvalidate.models.perdict_model import validate_sentences
 
     validation_msgs = {
         True: 'Perturbed!',
         False: 'A-OK valid sentence!'
     }
 
-    def load_model_and_validate(model_file, sentence):
-        print(validation_msgs[validate_sentence(pickle.load(model_file), next(embed_sentences([sentence])))])
+    def load_model_and_validate(model_file, text):
+        model = pickle.load(model_file)
+        embedding = embed_sentences(tokenize(text))
+        
+        for idx, is_perturbed in enumerate(validate_sentences(model, embedding)):
+            print(f'Sentence {idx}: {validation_msgs[is_perturbed]}')
 
     @click.command()
     @click.argument('sentence', type=str, default='Пушистые котики мурлыкают и не только')

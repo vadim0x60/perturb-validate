@@ -59,3 +59,13 @@ def embed_sentences(sentences):
             sent_embedding.append(np.concatenate([token_embedding, pos_embedding]))
         
         yield sent_embedding
+
+if __name__ == '__main__':
+    import click
+
+    @click.command()
+    @click.argument('text', type=str, default='Пушистые котики мурлыкают и не только')
+    def embed_txt(text):
+        print(list(embed_sentences(tokenize(text))))
+
+    embed_txt()
