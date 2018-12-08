@@ -13,7 +13,6 @@ nltk
 sentencepiece
 gensim
 #pytorch
-pymorphy2
 torchvision
 numpy
 scipy
@@ -21,7 +20,6 @@ scikit-learn
 
 DAWG-Python==0.7.2
 docopt==0.6.2
-pkg-resources==0.0.0
 pymorphy2==0.8
 pymorphy2-dicts==2.4.393442.3710985
 
