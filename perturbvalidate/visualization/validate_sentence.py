@@ -2,17 +2,17 @@
 #
 # >> python .\perturbvalidate\visualization\validate_sentence.py 'Пушистые котики мурлыкают и не только'
 # Using model C:\Users\Vadim\Documents\prog\perturb-validate\models\half_inflected.pickle
-# A-OK valid sentence!
+# Perturbed!
 # Using model C:\Users\Vadim\Documents\prog\perturb-validate\models\half_lemmatized.pickle
-# Wrong!
+# A-OK valid sentence!
 # Using model C:\Users\Vadim\Documents\prog\perturb-validate\models\shuffle.pickle
-# A-OK valid sentence!
+# Perturbed!
 # Using model C:\Users\Vadim\Documents\prog\perturb-validate\models\slight.pickle
-# A-OK valid sentence!
+# Perturbed!
 #
 # If you need a particular model, use --model
 # >> python .\perturbvalidate\visualization\validate_sentence.py 'Пушистые котики мурлыкают и не только' --model shuffle.pickle
-# A-OK valid sentence!
+# Perturbed!
 
 if __name__ == '__main__':
     import os
@@ -23,8 +23,8 @@ if __name__ == '__main__':
     from perturbvalidate.models.perdict_model import validate_sentence
 
     validation_msgs = {
-        True: 'A-OK valid sentence!',
-        False: 'Wrong!'
+        True: 'Perturbed!',
+        False: 'A-OK valid sentence!'
     }
 
     def load_model_and_validate(model_file, sentence):
