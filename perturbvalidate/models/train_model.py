@@ -7,7 +7,7 @@ import itertools
 import logging
 import pickle
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import f1_score
+from sklearn.metrics import confusion_matrix
 import numpy as np
 
 # # #
@@ -68,10 +68,13 @@ def train_discriminator(X_auth, X_perturbed, n_epochs=3):
         fit_epoch(orthodox_net, opt, ((X[batch], y[batch]) for batch in batches))
 
         y_pred = validate_sentences(orthodox_net, X_test)
-        score = f1_score(y_test, y_pred)
-        logger.info(f'Epoch {i}: f1 score of {score}')
+        cmatrix = confusion_matrix(y_test, y_pred)
+        accuracy = (cmatrix[0,0] + cmatrix[1,1]) / np.sum(cmatrix)
+        precision = cmatrix[1,1] / (cmatrix[1,1] + cmatrix[1,0])
+        recall = cmatrix[1,1] / (cmatrix[1,1] + cmatrix[0,1])
+        logger.info(f'Epoch {i}: accuracy of {accuracy}, precision {precision}, recall {recall}')
 
-    return orthodox_net, score
+    return orthodox_net, cmatrix
 
 # # #
 # Boring I/O stuff
