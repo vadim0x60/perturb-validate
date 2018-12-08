@@ -128,9 +128,9 @@ if __name__ == '__main__':
                 with open(os.path.join(model_path, model_name, perturbation_name + '.pickle'), 'xb') as f:
                     X_perturbed = load_X()
                     logger.info(f'Training with {perturbation_name} perturbations')
-                    model, confusion_matrix = train_discriminator(model, X_auth, X_perturbed)
+                    model, cmatrix = train_discriminator(model, X_auth, X_perturbed)
                     pickle.dump(model, f)
-                    scores[perturbation_name] = confusion_matrix
+                    scores[perturbation_name] = cmatrix
             except FileExistsError as e:
                 logger.info(f'{perturbation_name} model exists. Remove {perturbation_name}.pickle to re-train')
 
