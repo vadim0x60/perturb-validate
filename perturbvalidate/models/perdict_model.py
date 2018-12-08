@@ -18,11 +18,19 @@ def multi_layer_perceptron(input_size, output_size, hidden_layers, activation=nn
     return nn.Sequential(*layers)
 
 class OrthodoxNet(nn.Module):
-    def __init__(self, word_emb_size, hidden_size, out_layers):
+    def __init__(self, word_emb_size, hidden_size, out_layers, rnn='lstm'):
         super().__init__()
-        self.lstm = nn.LSTM(word_emb_size, hidden_size, batch_first=True)
-        self.classifier = multi_layer_perceptron(2 * hidden_size, 1, out_layers)
+        if rnn == 'lstm':
+            self.rnn = nn.LSTM(word_emb_size, hidden_size, batch_first=True)
+            self.classifier = multi_layer_perceptron(2 * hidden_size, 1, out_layers)
+        elif rnn == 'gru':
+            self.rnn = nn.GRU(word_emb_size, hidden_size, batch_first=True)
+            self.classifier = multi_layer_perceptron(hidden_size, 1, out_layers)
+        else:
+            assert False
+
         self.hidden_size = hidden_size
+        self.rnn_type = rnn
         self.use_cuda = False
 
     def cuda(self):
@@ -38,8 +46,14 @@ class OrthodoxNet(nn.Module):
         if self.use_cuda:
             c0, h0, sentences = c0.cuda(), h0.cuda(), sentences.cuda()
 
-        _, (cn, hn) = self.lstm(sentences, (c0, h0))
-        return self.classifier(torch.cat((cn[0], hn[0]), dim=1))[:,0]
+        if self.rnn_type == 'lstm':
+            _, (cn, hn) = self.rnn(sentences, (c0, h0))
+            sentence_embedding = torch.cat((cn[0], hn[0]), dim=1)
+        else:
+            _, cn = self.rnn(sentences, c0)
+            sentence_embedding = cn[0]
+
+        return self.classifier(sentence_embedding)[:,0]
 
 def validate_sentence(model, sentence):
     perturbed_probability = model(torch.Tensor([sentence])).cpu()

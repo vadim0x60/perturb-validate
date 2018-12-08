@@ -44,7 +44,7 @@ def fit_epoch(model, opt, batches):
         opt.step()
         opt.zero_grad()
 
-def train_discriminator(X_auth, X_perturbed, n_epochs=3):
+def train_discriminator(orthodox_net, X_auth, X_perturbed, n_epochs=3):
     """
     Assign label 0 to authentic sentences, label 1 to perturbed ones
     Have gradient descent and give birth to a discriminator model 
@@ -60,8 +60,7 @@ def train_discriminator(X_auth, X_perturbed, n_epochs=3):
     length_groups = groups(map(len, X))
     batches = [chunk for length, length_group in length_groups.items() for chunk in chunks(length_group, 100)]
     
-    # TODO support different embedding sizes
-    orthodox_net = OrthodoxNet(211, 30, 2).cuda()
+    orthodox_net = orthodox_net.cuda()
     opt = torch.optim.Adam(orthodox_net.parameters())
     
     for i in range(n_epochs):
@@ -97,11 +96,12 @@ if __name__ == '__main__':
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     logging.basicConfig(level=logging.INFO, format=log_fmt)
 
-    project_dir = Path(__file__).resolve().parents[2]
-    logger = logging.getLogger(__name__)
-
+    project_dir = Path(__file__).resolve().parents[2]  
     data_path = os.path.join(project_dir, 'data', 'processed')
     model_path = os.path.join(project_dir, 'models')
+
+    logger = logging.getLogger(__name__)
+    logger.addHandler(logging.FileHandler(os.path.join(model_path, "learning.log")))
 
     data_loaders = get_data_loaders(data_path)
     X_auth = data_loaders['authentic']()
@@ -113,16 +113,26 @@ if __name__ == '__main__':
     except FileNotFoundError:
         scores = {}
 
-    for perturbation_name, load_X in data_loaders.items():
-        try:
-            with open(os.path.join(model_path, perturbation_name + '.pickle'), 'xb') as f:
-                X_perturbed = load_X()
-                logger.info(f'Training with {perturbation_name} perturbations')
-                model, score = train_discriminator(X_auth, X_perturbed)
-                pickle.dump(model, f)
-                scores[perturbation_name] = score
-        except FileExistsError:
-            logger.info(f'{perturbation_name} model exists. Remove {perturbation_name}.pickle to re-train')
+    # TODO support different embedding sizes
+    models = {
+        'lstm30': OrthodoxNet(211, 30, 2, rnn='lstm'),
+        'lstm100': OrthodoxNet(211, 100, 2, rnn='lstm'),
+        'gru40': OrthodoxNet(211, 40, 2, rnn='gru'),
+        'gru120': OrthodoxNet(211, 120, 2, rnn='gru')
+    }
+
+    for model_name, model in models.items():
+        for perturbation_name, load_X in data_loaders.items():
+            try:
+                os.makedirs(os.path.join(model_path, model_name), exist_ok=True)
+                with open(os.path.join(model_path, model_name, perturbation_name + '.pickle'), 'xb') as f:
+                    X_perturbed = load_X()
+                    logger.info(f'Training with {perturbation_name} perturbations')
+                    model, confusion_matrix = train_discriminator(model, X_auth, X_perturbed)
+                    pickle.dump(model, f)
+                    scores[perturbation_name] = confusion_matrix
+            except FileExistsError as e:
+                logger.info(f'{perturbation_name} model exists. Remove {perturbation_name}.pickle to re-train')
 
     with open(os.path.join(model_path, 'scores.pickle'), 'wb') as f:
         pickle.dump(scores, f)
