@@ -5,7 +5,7 @@ import numpy as np
 
 normal_dist = Normal(0, 1)
 
-def multi_layer_perceptron(input_size, output_size, hidden_layers, activation=nn.Tanh):
+def multi_layer_perceptron(input_size, output_size, hidden_layers, activation=nn.Sigmoid):
     sizes = np.linspace(input_size, output_size, hidden_layers+2)
     sizes = sizes.round().astype(int)
     input_sizes = sizes[:-1]
@@ -42,7 +42,8 @@ class OrthodoxNet(nn.Module):
         return self.classifier(torch.cat((cn[0], hn[0]), dim=1))[:,0]
 
 def validate_sentence(model, sentence):
-    return bool(model(torch.Tensor([sentence])).cpu().round())
+    perturbed_probability = model(torch.Tensor([sentence])).cpu()
+    return bool(perturbed_probability.round())
 
 def validate_sentences(model, sentences):
     return [validate_sentence(model, sentence) for sentence in sentences]
