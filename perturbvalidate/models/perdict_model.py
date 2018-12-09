@@ -46,6 +46,8 @@ class OrthodoxNet(nn.Module):
         if self.use_cuda:
             c0, h0, sentences = c0.cuda(), h0.cuda(), sentences.cuda()
 
+        self.rnn.flatten_parameters()
+
         if self.rnn_type == 'lstm':
             _, (cn, hn) = self.rnn(sentences, (c0, h0))
             sentence_embedding = torch.cat((cn[0], hn[0]), dim=1)
@@ -56,8 +58,8 @@ class OrthodoxNet(nn.Module):
         return self.classifier(sentence_embedding)[:,0]
 
 def validate_sentence(model, sentence):
-    perturbed_probability = model(torch.Tensor([sentence])).cpu()
-    return bool(perturbed_probability.round())
+    perturbation_probability = model(torch.Tensor([sentence])).cpu()
+    return bool(perturbation_probability.round())
 
 def validate_sentences(model, sentences):
     return [validate_sentence(model, sentence) for sentence in sentences]

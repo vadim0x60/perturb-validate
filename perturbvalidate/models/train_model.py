@@ -1,4 +1,5 @@
 from perturbvalidate.models.perdict_model import OrthodoxNet, validate_sentences
+from perturbvalidate.data import files
 from pathlib import Path
 import torch
 import torch.nn.functional as F
@@ -6,6 +7,7 @@ import os
 import itertools
 import logging
 import pickle
+import json
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
 import numpy as np
@@ -36,10 +38,10 @@ def groups(seq):
 
 def fit_epoch(model, opt, batches):
     for sentence, validity in batches:
-        sentence = np.stack(sentence.tolist())
+        batch_size = len(sentence)
 
         pred = model(torch.Tensor(sentence))
-        loss = F.binary_cross_entropy(pred, torch.Tensor(validity).cuda())
+        loss = F.binary_cross_entropy(pred, torch.Tensor(validity).cuda()) * batch_size
         loss.backward()
         opt.step()
         opt.zero_grad()
@@ -52,87 +54,68 @@ def train_discriminator(orthodox_net, X_auth, X_perturbed, n_epochs=3):
 
     logger = logging.getLogger(__name__)
 
-    X = np.array(X_auth + X_perturbed)
-    y = np.array([0 for i in X_auth] + [1 for i in X_perturbed])
+    X = X_auth + X_perturbed
+    y = [1 for i in X_auth] + [0 for i in X_perturbed]
     X_train, X_test, y_train, y_test = train_test_split(X, y, shuffle=True)
 
-    # Group sentences by length to batch them for the RNN
-    length_groups = groups(map(len, X))
-    batches = [chunk for length, length_group in length_groups.items() for chunk in chunks(length_group, 100)]
-    
-    orthodox_net = orthodox_net.cuda()
     opt = torch.optim.Adam(orthodox_net.parameters())
     
     for i in range(n_epochs):
-        fit_epoch(orthodox_net, opt, ((X[batch], y[batch]) for batch in batches))
+        batches =  batch_by(zip(X_train, y_train), key=lambda x:len(x[0]), n=100, collate_fn=lambda x: zip(*x))
+        fit_epoch(orthodox_net, opt, batches)
 
         y_pred = validate_sentences(orthodox_net, X_test)
         cmatrix = confusion_matrix(y_test, y_pred)
-        accuracy = (cmatrix[0,0] + cmatrix[1,1]) / np.sum(cmatrix)
-        precision = cmatrix[1,1] / (cmatrix[1,1] + cmatrix[1,0])
-        recall = cmatrix[1,1] / (cmatrix[1,1] + cmatrix[0,1])
-        logger.info(f'Epoch {i}: accuracy of {accuracy}, precision {precision}, recall {recall}')
+        logger.info(f'Epoch {i}: confusion matrix [[TN, FP], [FN, TP]] {cmatrix.tolist()}')
 
-    return orthodox_net, cmatrix
+    return cmatrix
 
 # # #
 # Boring I/O stuff
 # # #
 
-def get_data_loaders(data_path):
-    data_loaders = {}
 
-    for file in os.listdir(data_path):
-        if file[-7:] == '.pickle':
-            def load_dataset():
-                with open(os.path.join(data_path, file), 'rb') as f:
-                    return pickle.load(f)
-
-            data_loaders[file[:-7]] = load_dataset
-
-    return data_loaders
 
 if __name__ == '__main__':
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     logging.basicConfig(level=logging.INFO, format=log_fmt)
 
-    project_dir = Path(__file__).resolve().parents[2]  
-    data_path = os.path.join(project_dir, 'data', 'processed')
-    model_path = os.path.join(project_dir, 'models')
-
     logger = logging.getLogger(__name__)
-    logger.addHandler(logging.FileHandler(os.path.join(model_path, "learning.log")))
-
-    data_loaders = get_data_loaders(data_path)
-    X_auth = data_loaders['authentic']()
-    del data_loaders['authentic']
+    logger.addHandler(logging.FileHandler("learning.log"))
 
     try:
-        with open(os.path.join(model_path, 'scores.pickle'), 'rb') as f:
-            scores = pickle.load(f)
+        with files.open_scores('rb') as f:
+            scores = json.load(f)
     except FileNotFoundError:
         scores = {}
 
     # TODO support different embedding sizes
     models = {
         'lstm30': OrthodoxNet(211, 30, 2, rnn='lstm'),
-        'lstm100': OrthodoxNet(211, 100, 2, rnn='lstm'),
-        'gru40': OrthodoxNet(211, 40, 2, rnn='gru'),
-        'gru120': OrthodoxNet(211, 120, 2, rnn='gru')
+        'lstm100': OrthodoxNet(211, 80, 2, rnn='lstm'),
+        'gru40': OrthodoxNet(211, 30, 2, rnn='gru'),
+        'gru80': OrthodoxNet(211, 80, 2, rnn='gru')
     }
 
-    for model_name, model in models.items():
-        for perturbation_name, load_X in data_loaders.items():
-            try:
-                os.makedirs(os.path.join(model_path, model_name), exist_ok=True)
-                with open(os.path.join(model_path, model_name, perturbation_name + '.pickle'), 'xb') as f:
-                    X_perturbed = load_X()
-                    logger.info(f'Training with {perturbation_name} perturbations')
-                    model, cmatrix = train_discriminator(model, X_auth, X_perturbed)
-                    pickle.dump(model, f)
-                    scores[perturbation_name] = cmatrix
-            except FileExistsError as e:
-                logger.info(f'{perturbation_name} model exists. Remove {perturbation_name}.pickle to re-train')
+    with files.open_processed('authentic', 'rb') as f:
+        X_auth = pickle.load(f)
 
-    with open(os.path.join(model_path, 'scores.pickle'), 'wb') as f:
-        pickle.dump(scores, f)
+    for model_name, model in models.items():
+        for perturbation_name, data_f in files.open_perturbed('rb'):
+            try:
+                if model_name not in scores:
+                    scores[model_name] = {}
+
+                with files.open_model([model_name, perturbation_name], 'xb') as model_f:
+                    with data_f:
+                        X_perturbed = pickle.load(data_f)
+                    logger.info(f'Training {model_name} with {perturbation_name} perturbations')
+                    model = model.cuda()
+                    cmatrix = train_discriminator(model, X_auth, X_perturbed)
+                    pickle.dump(model, model_f)
+                    scores[model_name][perturbation_name] = cmatrix.tolist()
+            except FileExistsError as e:
+                logger.info(f'{model_name}/{perturbation_name} model exists. Remove to re-train')
+
+    with files.open_scores('w') as f:
+        json.dump(scores, f)
