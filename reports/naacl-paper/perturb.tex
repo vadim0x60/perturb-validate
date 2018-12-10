@@ -36,7 +36,7 @@
   Skolkovo Institute of Science and Technology\\
   3 Nobelya st., Moscow 121205 \\
   {\tt Vadim.Liventsev@skoltech.ru} \\\And
-  Mariya Shejanova \\
+  Mariya Sheyanova \\
   School of Linguistics \\
   Higher School of Economics \\
   21/4 Staraya Basmannaya Ulitsa, Moscow 105066 \\
@@ -52,22 +52,46 @@
   This is achieved by applying random perturbations to sentences from the corpus and training a recurrent neural network to discriminate between the original sentences and the perturbed ones.
   Choosing the right perturbation model, however, is far from trivial: the resulting validation model has to generalize beyond the specific perturbation we introduced and be able to recognize previously unseen kinds of deviations from the norm it learned from the corpus.
   We develop several perturbation models, demonstrate and compare their generalization ability.
-\end{abstract}\section{Background}
+\end{abstract}
+
+\section{Background}
 \label{sec:background}
 
-\section{Related work}
-\label{sec:related-work}
+Text validation is the problem of discriminating between text that belongs to a certaing domain (language or a subdomain of language, such as a certain author's style) from text that contains errors. 
+Common applications of text validation include software that suggests improvements and error corrections for user-written text\footnote{for instalce, grammarly.com} and as a quality control mechanism for generative models \cite{eval-genmodels}.
+
+One way to develop a text validator is to manually implement a rule-based grammar: an algorithm for text validation based on expert knowledge of the language at hand. 
+This has been done with some success, for example for English by \citet{easyenglish} and \citet{english-checker}, for Swedish by \citet{swedish-checker} % HDPSG for Russian by \citet{russian-grammar}
+
+% Language modelling
+
+% Using mistake data
+
+% But here's why you need perturbation learning
 
 \section{Methodology}
 \label{sec:methodology}
 
-We hypothesise that a discriminator trained to detect sentences that have been randomly perturbed can generalize to perform text validation. To that end, we introduce several \emph{perturbation models}.
+We hypothesise that there exists a mechanism of applying random perturbations to sentences such that a discriminator trained to detect sentences that have been perturbed from intact ones can be used to detect mistakes more generally.
+To that end, we introduce several \emph{perturbation models}.
+For each of them, we train a binary classifier (\emph{validation model}), test its performance on a holdout validation dataset and then on the datasets used to train other \emph{validation models}.
+Our hypothesis can be considered confirmed if a \emph{validation model} trained with \emph{perturbation model} correctly detect sentences modified with other \emph{perturbation models}.
 
-\subsection{Word-level perturbations}
+\subsection{Perturbation models}
 
-\subsection{Character-level perturbations}
+\begin{figure}
+\end{figure}
 
-\subsection{Word-form perturbations}
+\subsubsection{Word-order perturbations}
+
+The first model we employ is \emph{random word flip}: a randomly selected word in the sentence is moved to a randomly selected location in the sentence.
+All words and locations have equal probability to be selected.
+
+\emph{Shuffle} perturbation means reordering the entire sentence according to a random permutation.
+
+Note that neither of the models guarantees that the pertubed setence will be ungrammatical and, in fact, can leave the setence unchanged entirely.
+
+\subsubsection{Word-form perturbations}
 
 This kind of perturbation is performed using \texttt{pymorphy2} \cite{pymorphy2} and includes two types of transformations, based on morphological analysis and generation.
 
@@ -76,21 +100,21 @@ This kind of perturbation is performed using \texttt{pymorphy2} \cite{pymorphy2}
     \item \emph{Random inflection} is similar to \emph{random lemmatization}, but instead of replacing a token with its normal form, we take some other grammatical form of this word. For nouns, adjectives and personal pronouns, we randomly change case; for verbs, person is changed. Tokens with other parts of speech remain unchanged.
 \end{itemize}
 
-The two types of token transformation are applied separately and form two different training sets.
+\subsubsection{Markov chain perturbations}
 
-\subsection{Markov chain perturbations}
-
-This type of perturbations differs from others in that instead of doing changes to an initially grammatical sentence, we train a generative n-gram language model to produce some ill-formed sentences. To create the language model, we used the \texttt{markovfy} \footnote{https://github.com/jsvine/markovify} implementation of Markov chain.
+This type of perturbations differs from others in that instead of doing changes to an initially grammatical sentence, we train a generative n-gram language model to produce some ill-formed sentences. To create the language model, we used the \texttt{markovfy} \footnote{github.com/jsvine/markovify} implementation of Markov chain.
 
 It is worth noting that not all of the sentences generated by markov chain are ungrammatical, but a significant part of them is, since the n-gram model cannot see further than n tokens into the past. In order to increase the number of ungrammatical sentences generated by the model we suppress any generated sentences that exactly overlap the original text by 50\% of the sentence's word count.
 
-\subsection{Adversarial perturbations}
+\subsection{Validation model}
+
+Neural network-based approaches have the additional benefit that the validation function $f(s)$ ($s$ - sentence) is differentiable ($\frac{df}{ds}$ can be easily calculated) and thus can be used as perceptual loss \cite{perceptualloss} to train a generative neural network that outputs natural-sounding text.
 
 \section{Experimental setup}
 \label{sec:setup}
 
 \section{Results}
 \label{sec:results}
-\bibliography{refs}{}
-\bibliographystyle{IEEEtran}
+\bibliographystyle{acl_natbib}
+\bibliography{../../references/refs}
 \end{document}
