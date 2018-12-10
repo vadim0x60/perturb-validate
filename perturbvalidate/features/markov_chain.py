@@ -29,4 +29,7 @@ def generate_sample(text, n):
 	for i in range(n):
 		# max_overlap_ratio=0.5 means to suppress any generated sentences that exactly
 		# overlaps the original text by 50% of the sentence's word count
-		yield text_model.make_sentence(max_overlap_ratio=0.5)
+		sentence = None
+		while not sentence:
+			sentence = text_model.make_sentence(max_overlap_ratio=0.5)
+		yield sentence

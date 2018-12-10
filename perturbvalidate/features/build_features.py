@@ -1,10 +1,11 @@
 from pathlib import Path
 import os
 import pickle
-from perturbvalidate.features.embed import tokenize, embed_sentences
+from perturbvalidate.features.embed import tokenize, embed_sentences, tokenizer
 
 from perturbvalidate.features import perturb
 from perturbvalidate.features import morpho_perturb
+from perturbvalidate.features import markov_chain
 perturbations = perturb.perturbations + morpho_perturb.perturbations
 perturbation_names = perturb.perturbation_names + morpho_perturb.perturbation_names
 
@@ -40,3 +41,11 @@ if __name__ == '__main__':
                 pickle.dump(embeddings, f)
         except FileExistsError:
             print(f'{name} dataset already exists')
+
+    try:
+        with open(os.path.join(project_dir, 'data', 'processed', 'markov.pickle'), 'xb') as f:
+            transformed_sentences = [tokenizer.tokenize(s) for s in markov_chain.generate_sample(text, len(sentences))]
+            embeddings = list(embed_sentences(transformed_sentences))
+            pickle.dump(embeddings, f)
+    except FileExistsError:
+        print(f'markov dataset already exists')
