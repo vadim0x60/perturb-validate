@@ -100,6 +100,8 @@ if __name__ == '__main__':
     with files.open_processed('authentic', 'rb') as f:
         X_auth = pickle.load(f)
 
+    # Train single-perturbation models
+
     for model_name, model in models.items():
         for perturbation_name, data_f in files.open_perturbed('rb'):
             try:
@@ -119,3 +121,33 @@ if __name__ == '__main__':
                         json.dump(scores, f)
             except FileExistsError as e:
                 logger.info(f'{model_name}/{perturbation_name} model exists. Remove to re-train')
+
+        # Train multi-perturbation models
+
+        for skip_perturbation_name, _ in files.open_perturbed('rb'):
+            try:
+                if model_name not in scores:
+                    scores[model_name] = {}
+
+                with files.open_model([model_name, 'but_' + skip_perturbation_name], 'xb') as model_f:
+                    X_perturbed = []
+                    for perturbation_name, data_f in files.open_perturbed('rb'):
+                        if perturbation_name == skip_perturbation_name:
+                            continue
+                        with data_f:
+                            X_perturbed += pickle.load(data_f)
+                    np.random.shuffle(X_perturbed)
+                    X_perturbed = X_perturbed[:len(X_auth)]
+
+                    logger.info(f'Training {model_name} with all perturbations but {skip_perturbation_name}')
+                    model = model.cuda()
+                    cmatrix = train_discriminator(model, X_auth, X_perturbed)
+                    pickle.dump(model, model_f)
+                    scores[model_name]['but_' + skip_perturbation_name] = cmatrix.tolist()
+
+                    with files.open_scores('w') as f:
+                        json.dump(scores, f)
+            except FileExistsError as e:
+                logger.info(f'{model_name}/but_{skip_perturbation_name} model exists. Remove to re-train')
+
+            
