@@ -91,10 +91,10 @@ if __name__ == '__main__':
 
     # TODO support different embedding sizes
     models = {
-        'lstm30': OrthodoxNet(211, 30, 2, rnn='lstm'),
-        'lstm100': OrthodoxNet(211, 80, 2, rnn='lstm'),
-        'gru40': OrthodoxNet(211, 30, 2, rnn='gru'),
-        'gru80': OrthodoxNet(211, 80, 2, rnn='gru')
+        'lstm30': OrthodoxNet(211, 30, 2, rnn='lstm')
+        #'lstm100': OrthodoxNet(211, 80, 2, rnn='lstm'),
+        #'gru40': OrthodoxNet(211, 30, 2, rnn='gru'),
+        #'gru80': OrthodoxNet(211, 80, 2, rnn='gru')
     }
 
     with files.open_processed('authentic', 'rb') as f:
@@ -114,8 +114,8 @@ if __name__ == '__main__':
                     cmatrix = train_discriminator(model, X_auth, X_perturbed)
                     pickle.dump(model, model_f)
                     scores[model_name][perturbation_name] = cmatrix.tolist()
+
+                    with files.open_scores('w') as f:
+                        json.dump(scores, f)
             except FileExistsError as e:
                 logger.info(f'{model_name}/{perturbation_name} model exists. Remove to re-train')
-
-    with files.open_scores('w') as f:
-        json.dump(scores, f)
