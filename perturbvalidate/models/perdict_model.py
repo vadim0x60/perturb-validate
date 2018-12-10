@@ -58,8 +58,7 @@ class OrthodoxNet(nn.Module):
         return self.classifier(sentence_embedding)[:,0]
 
 def validate_sentence(model, sentence):
-    perturbation_probability = model(torch.Tensor([sentence])).cpu()
-    return bool(perturbation_probability.round())
+    return bool(model(torch.Tensor([sentence])).cpu().round())
 
 def validate_sentences(model, sentences):
     return [validate_sentence(model, sentence) for sentence in sentences]

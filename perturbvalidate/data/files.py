@@ -14,7 +14,7 @@ def open_models(mod):
         for file in files:
             if file[-7:] == '.pickle':
                 full_path = os.path.join(folder, file)
-                yield full_path[len(model_path):-7], open(os.path.join(folder, file), mod)
+                yield os.path.split(full_path[len(model_path):-7]), open(full_path, mod)
 
 def open_scores(mod):
     return open(os.path.join(model_path, 'scores.json'), mod)

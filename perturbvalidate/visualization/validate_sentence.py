@@ -24,8 +24,8 @@ if __name__ == '__main__':
     from perturbvalidate.data.files import open_models
 
     validation_msgs = {
-        True: 'Perturbed!',
-        False: 'A-OK valid sentence!'
+        True: 'A-OK valid sentence!',
+        False: 'Wrong! Make sure your sentence ends with a period.'
     }
 
     def load_model_and_validate(model_file, text):
@@ -36,7 +36,7 @@ if __name__ == '__main__':
             print(f'Sentence {idx}: {validation_msgs[is_perturbed]}')
 
     @click.command()
-    @click.argument('sentence', type=str, default='Пушистые котики мурлыкают и не только')
+    @click.argument('sentence', type=str, default='Пушистые котики мурлыкают и не только.')
     @click.option('--model', help='model to use, e.g. lstm/perturb.pickle')
     def validate(sentence, model):
         project_dir = Path(__file__).resolve().parents[2]
@@ -52,7 +52,7 @@ if __name__ == '__main__':
         else:
             for model_name, model_f in open_models('rb'):
                 with model_f:
-                    print(f'Using model {os.path.join(folder, file)}')
+                    print(f'Using model ' + '/'.join(model_name))
                     load_model_and_validate(model_f, sentence)                          
 
     validate()
