@@ -21,6 +21,7 @@ if __name__ == '__main__':
     from pathlib import Path
     from perturbvalidate.features.embed import embed_sentences, tokenize
     from perturbvalidate.models.perdict_model import validate_sentences
+    from perturbvalidate.data.files import open_models
 
     validation_msgs = {
         True: 'Perturbed!',
@@ -49,11 +50,9 @@ if __name__ == '__main__':
                 load_model_and_validate(f, sentence)
 
         else:
-            for folder, subfolders, files in os.walk(model_path):
-                for file in files:
-                    if file[-7:] == '.pickle' and file != 'scores.pickle':
-                        with open(os.path.join(folder, file), 'rb') as f:
-                            print(f'Using model {os.path.join(folder, file)}')
-                            load_model_and_validate(f, sentence)
+            for model_name, model_f in open_models('rb'):
+                with model_f:
+                    print(f'Using model {os.path.join(folder, file)}')
+                    load_model_and_validate(model_f, sentence)                          
 
     validate()
