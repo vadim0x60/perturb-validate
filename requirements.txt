@@ -26,3 +26,4 @@ pymorphy2-dicts==2.4.393442.3710985
 markovify==0.7.1
 Unidecode==1.0.23
 
+tabulate
